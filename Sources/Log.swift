@@ -17,6 +17,6 @@ enum Log {
   }
 
   static func error(_ message: String) {
-    FileHandle.standardError.write(Data("\(NScroll.name): \(message)\n".utf8))
+    FileHandle.standardError.write(Data("\(NScroll.command): \(message)\n".utf8))
   }
 }

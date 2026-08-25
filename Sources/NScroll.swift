@@ -24,12 +24,16 @@ struct NScroll {
   static var executablePath: String {
     var size = UInt32(PATH_MAX)
     var buffer = [CChar](repeating: 0, count: Int(size))
-    guard _NSGetExecutablePath(&buffer, &size) == 0 else { return name }
+    guard _NSGetExecutablePath(&buffer, &size) == 0 else { return command }
     return URL(fileURLWithPath: String(cString: buffer)).resolvingSymlinksInPath().path
   }
 
   enum Command: String {
     case run
+    case enable
+    case disable
+    case restart
+    case status
     case help
     case version
 
@@ -48,7 +52,8 @@ struct NScroll {
 
   /// Kept out of `main()` so it can be driven with a synthetic argv.
   ///
-  /// Exit codes: 0 success, 1 runtime failure, 2 bad invocation.
+  /// Exit codes: 0 success or agent running, 1 runtime failure, 2 bad
+  /// invocation, 3 agent installed but not running, 4 agent not installed.
   func run(_ argv: [String]) -> Int32 {
     let arguments = argv.dropFirst()
 
@@ -62,25 +67,34 @@ struct NScroll {
     }
     guard let command = Command(argument: first) else {
       Log.error("unknown command `\(first)`")
-      Log.error("run `\(Self.name) help` for usage")
+      Log.error("run `\(Self.command) help` for usage")
       return 2
     }
 
     do {
-      try execute(command)
-      return 0
+      return try execute(command)
     } catch {
       Log.error("\(error)")
       return 1
     }
   }
 
-  private func execute(_ command: Command) throws {
+  /// Returns the process exit code. Everything but `status` reports success
+  /// by returning, and failure by throwing.
+  private func execute(_ command: Command) throws -> Int32 {
     switch command {
     case .run: try ScrollService().run()
+    case .enable: try LaunchAgent.enable()
+    case .disable: try LaunchAgent.disable()
+    case .restart: try LaunchAgent.restart()
+    case .status:
+      let status = try LaunchAgent.status()
+      Log.info("\(status)")
+      return status.exitCode
     case .help: printOverview()
     case .version: Log.info(Self.version)
     }
+    return 0
   }
 
   private func printOverview() {
@@ -92,6 +106,10 @@ struct NScroll {
       usage: \(Self.command) <command>
 
         run        invert scrolling in the foreground until interrupted
+        enable     install and start the launch agent
+        disable    stop and remove the launch agent
+        restart    restart the launch agent, after reinstalling the binary
+        status     report whether the launch agent is installed and running
         help       show this message                        (-h, --help)
         version    print the version                        (-V, --version)
       """)
