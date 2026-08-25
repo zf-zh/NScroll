@@ -26,7 +26,7 @@ macOS won't let the event tap start until you grant Accessibility permission to 
 
 ## Commands
 
-|                   |                                                          |
+| **Command**       | **Description**                                          |
 | ----------------- | -------------------------------------------------------- |
 | `nscroll run`     | invert scrolling in the foreground until interrupted     |
 | `nscroll enable`  | install and start the launch agent                       |
@@ -51,6 +51,20 @@ After a rebuild: `sudo make install && make restart`.
 ## Configuration
 
 None, by design. NScroll inverts the vertical axis for discrete wheels and that's the whole feature. To also invert horizontal scrolling, edit `axes` in [`Sources/ScrollInverter.swift`](Sources/ScrollInverter.swift) and rebuild.
+
+## Shell completion
+
+```bash
+make install-completion
+```
+
+Installs bash and zsh completions under `~/.local/share` — no `sudo`. Bash picks its up automatically. For zsh, add this to `~/.zshrc` before `compinit`:
+
+```zsh
+fpath=(~/.local/share/zsh/site-functions $fpath)
+```
+
+Remove both with `make uninstall-completion`.
 
 ## License
 

@@ -7,6 +7,12 @@ BUILD      := build
 BIN        := $(BUILD)/$(NAME)
 SOURCES    := $(wildcard Sources/*.swift)
 
+# Completions are per-user: bash-completion only auto-discovers the XDG user
+# directory, never $(PREFIX), so both shells install under $(HOME) and
+# install-completion needs no sudo.
+BASHCOMPDIR ?= $(HOME)/.local/share/bash-completion/completions
+ZSHCOMPDIR  ?= $(HOME)/.local/share/zsh/site-functions
+
 SWIFTC     ?= swiftc
 # -parse-as-library is mandatory: without it swiftc treats a file as script
 # mode and @main will not compile.
@@ -19,7 +25,8 @@ SWIFTFLAGS := -parse-as-library -swift-version 5 -O -wmo \
 # build with SIGN_ID="NScroll Dev" to make the grant stick.
 SIGN_ID    ?= -
 
-.PHONY: all install uninstall enable disable restart status clean
+.PHONY: all install uninstall enable disable restart status \
+        install-completion uninstall-completion clean
 
 all: $(BIN)
 
@@ -55,6 +62,20 @@ restart:
 # `-` so an exit code of 3 or 4 reports the agent's state rather than failing make.
 status:
 	-@$(BINDIR)/$(NAME) status
+
+# The installed filenames are what each shell looks up by: `nscroll` for
+# bash-completion, `_nscroll` for zsh's fpath.
+install-completion:
+	install -d $(BASHCOMPDIR) $(ZSHCOMPDIR)
+	install -m 0644 completions/nscroll.bash $(BASHCOMPDIR)/$(NAME)
+	install -m 0644 completions/_nscroll $(ZSHCOMPDIR)/_nscroll
+	@echo
+	@echo "bash  $(BASHCOMPDIR)/$(NAME)  (loads automatically)"
+	@echo "zsh   $(ZSHCOMPDIR)/_nscroll"
+	@echo "      add to ~/.zshrc before compinit:  fpath=($(ZSHCOMPDIR) \$$fpath)"
+
+uninstall-completion:
+	rm -f $(BASHCOMPDIR)/$(NAME) $(ZSHCOMPDIR)/_nscroll
 
 clean:
 	rm -rf $(BUILD)

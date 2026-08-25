@@ -1,0 +1,28 @@
+#compdef nscroll
+
+# Every invocation is exactly one word; a second argument is a usage error.
+(( CURRENT == 2 )) || return 0
+
+if [[ $words[CURRENT] == -* ]]; then
+  local -a options
+  options=(
+    '-h:show the usage message'
+    '--help:show the usage message'
+    '-V:print the version'
+    '--version:print the version'
+  )
+  _describe -t options 'option' options
+  return
+fi
+
+local -a commands
+commands=(
+  'run:invert scrolling in the foreground until interrupted'
+  'enable:install and start the launch agent'
+  'disable:stop and remove the launch agent'
+  'restart:restart the launch agent, after reinstalling the binary'
+  'status:report whether the launch agent is installed and running'
+  'help:show the usage message'
+  'version:print the version'
+)
+_describe -t commands 'nscroll command' commands
